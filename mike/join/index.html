@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html class="ocks-org do-not-copy">
 <meta charset="utf-8">
-<title>Thinking with Joins</title>
+<title>Мыслим связками</title>
 <style>
 
 @import url(../style.css?aea6f0a);
@@ -20,22 +20,22 @@ circle {
   <a href="../" rel="author">Mike Bostock</a>
 </header>
 
-<h1>Thinking with Joins</h1>
+<h1>Мыслим связками</h1>
 
-<p>Say you’re making a basic scatterplot using <a href="http://d3js.org/">D3</a>, and you need to create some <a href="http://www.w3.org/TR/SVG/shapes.html#CircleElement">SVG circle</a> elements to visualize your data. You may be surprised to discover that D3 has no primitive for creating multiple DOM elements. Wait, <b><a href="https://www.destroyallsoftware.com/talks/wat">WAT?</a></b>
+<p>Скажем, вы собираетесь показать данные <a href="http://www.w3.org/TR/SVG/shapes.html#CircleElement">SVG-кругами</a> на двумерном графике. Вот вы удивитесь, узнав, что в D3 нет примитивов для создания группы DOM-элементов. Погодите, <b><a href="https://www.destroyallsoftware.com/talks/wat">ЧО?</a></b>
 
-<p>Sure, there’s the <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">append</a> method, which you can use to create a single element.
+<p>Для создания одного элемента используется метод <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">append</a>:
 
-<aside>Here <code>svg</code> refers to a single-element selection containing an <code class="html">&lt;svg&gt;</code> element created previously (or selected from the current page, say).</aside>
+<aside>Здесь <code>svg</code> ссылается на выборку из одного элемента <code class="html">&lt;svg&gt;</code>, созданного или выбранного ранее на текущей странице.</aside>
 
 <pre><code>svg.append("circle")
     .attr("cx", d.x)
     .attr("cy", d.y)
     .attr("r", 2.5);</code></pre>
 
-<p>But that’s just a single circle, and you want <i>many</i> circles: one for each data point. Before you bust out a <code>for</code> loop and brute-force it, consider this mystifying sequence from one of D3’s examples.
+<p>Но это один круг, а нужно <i>несколько</i> — по одному для каждого значения. Прежде чем прибегнуть к помощи цикла <code>for</code>, изучите эти таинственные строки:
 
-<aside>Here <code>data</code> is an array of JSON objects with <code>x</code> and <code>y</code> properties, such as: <code>[{"x": 1.0, "y": 1.1}, {"x": 2.0, "y": 2.5}, …]</code>.</aside>
+<aside>Здесь <code>data</code> — это массив JSON-объектов со свойствами <code>x</code> и <code>y</code>, например: <code>[{"x": 1.0, "y": 1.1}, {"x": 2.0, "y": 2.5}, …]</code>.</aside>
 
 <pre><code>svg.selectAll("circle")
     .data(data)
@@ -44,29 +44,30 @@ circle {
     .attr("cy", function(d) { return d.y; })
     .attr("r", 2.5);</code></pre>
 
-<p>This code does exactly what you need: it creates a circle element for each data point, using the <code>x</code> and <code>y</code> data properties for positioning. But what’s with the <code>selectAll("circle")</code>? Why do you have to select elements that you know don’t exist in order to create new ones? WAT.
+<p>Они делают ровно то, что нужно: создают по одному SVG-кругу для каждого элемента данных, используя свойства <code>x</code> и <code>y</code> в качестве координат. Но почему мы выделяем заведомо несуществующие элементы вместо того, чтобы просто создать новые? ЧО?
 
-<p>Here’s the deal. Instead of telling D3 <i>how</i> to do something, tell D3 <i>what</i> you want. You want the circle elements to correspond to data. You want one circle per datum. Instead of instructing D3 to create circles, then, tell D3 that the selection <code>"circle"</code> should correspond to data. This concept is called the <i>data join</i>:
+<p>А вот что: вместо того, чтобы указывать D3 <i>как</i> сделать что-то, сообщите, <i>что</i> именно вам нужно. Вам нужны круги, связанные с данными — по одному кругу для каждого элемента данных. Для этого достаточно сообщить D3, что выборка <code>"circle"</code> связана с данными. Этот принцип называется <i>связкой</i> элементов с данными.
 
 <p id="join">
 
-<p>Data points joined to existing elements produce the <i>update</i> (inner) selection. Leftover unbound data produce the <i>enter</i> selection (left), which represents missing elements. Likewise, any remaining unbound elements produce the <i>exit</i> selection (right), which represents elements to be removed.
+<p>Данные, связанные с уже существующими элементами, образуют выборку <i>update</i> (пересечение кругов). Оставшиеся данные образуют выборку <i>enter</i> (слева), которая представляет недостающие элементы. Соответственно, элементы без данных образуют выборку <i>exit</i> (справа), предназначенную для удаления.
 
-<p>Now we can unravel the mysterious enter-append sequence through the data join:<ol>
+<p>Принцип связки элементов с данными поможет нам разобраться в таинственной последовательности <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-enter">enter</a>&thinsp;&ndash;&thinsp;<a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">append</a>:<ol>
 
-<li><p>First, <code>svg.selectAll("circle")</code> returns a new empty selection, since the SVG container was empty. The parent node of this selection is the SVG container.
+<li><p><code>svg.selectAll("circle")</code> возвращает пустую выборку, т.к. SVG-контейнер был пуст. Родительский узел для этой выборки — элемент SVG.
 
-<li><p>This selection is then joined to an array of data, resulting in three new selections that represent the three possible states: <i>enter</i>, <i>update</i>, and <i>exit</i>. Since the selection was empty, the update and exit selections are empty, while the enter selection contains a placeholder for each new datum.
+<li><p>Пустая выборка связывается с массивом данных, порождая три выборки: <i>enter</i>, <i>update</i> и <i>exit</i>.
 
-<li><p>The update selection is returned by <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-data">selection.data</a>, while the enter and exit selections hang off the update selection; <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-enter">selection.enter</a> thus returns the enter selection.
+<li><p>Метод <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-data">selection.data</a> по умолчанию возвращает выборку <i>update</i>; для обращения к выборкам <i>enter</i> и <i>exit</i> используются методы <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-enter">selection.enter</a> и <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-exit">selection.exit</a> соотвественно.
 
-<li><p>The missing elements are added to the SVG container by calling <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">selection.append</a> on the enter selection. This appends a new circle for each data point to the SVG container.
+<li><p>Недостающие элементы добавляются в родительский узел вызовом <a href="https://github.com/mbostock/d3/wiki/Selections#wiki-append">selection.append</a> на выборке <i>enter</i>. Так в SVG-контейнере появляется по кругу для каждого элемента данных.
 
-</ol><p>Thinking with joins means declaring a relationship between a selection (such as <code>"circle"</code>) and data, and then implementing this relationship through the three <i>enter</i>, <i>update</i> and <i>exit</i> states.
+</ol><p>Мыслить связками — значит объявить связь между выборкой элементов и данными, а затем управлять ей с помощью состояний <i>enter</i>, <i>update</i> и <i>exit</i>.
 
-<p>But why all the trouble? Why not just a primitive to create multiple elements? The beauty of the data join is that it generalizes. While the above code only handles the <i>enter</i> selection, which is sufficient for static visualizations, you can extend it to support <a href="http://bost.ocks.org/mike/miserables/">dynamic</a> <a href="http://mbostock.github.com/d3/ex/population.html">visualizations</a> with only minor modifications for <i>update</i> and <i>exit</i>. And that means you can visualize <a href="http://bost.ocks.org/mike/path/">realtime data</a>, allow <a href="http://mbostock.github.com/d3/ex/splom.html">interactive exploration</a>, and <a href="http://mbostock.github.com/d3/talk/20111116/transitions.html">transition smoothly</a> between datasets!
+<p>Но к чему такие сложности? Почему не создать группу элементов одной командой? Красота связок — в обобщении. Приведённый код обрабатывает лишь состояние <i>enter</i>, этого достаточно для статических визуализаций. Для создания <a href="http://bost.ocks.org/mike/miserables/">динамической</a> <a href="http://mbostock.github.com/d3/ex/population.html">визуализации</a> достаточно добавить обработку состояний <i>update</i> and <i>exit</i>. После этого вы сможете <a href="http://bost.ocks.org/mike/path/">отображать данные в режиме реального времени</a>, <a href="http://mbostock.github.com/d3/ex/splom.html">добавлять интерактивное взаимодействие</a>, <a href="http://mbostock.github.com/d3/talk/20111116/transitions.html">плавно анимировать переходы</a>!
 
-<p>Here’s an example of handling all three states:
+
+<p>Вот пример обработки всех трёх состояний:
 
 <pre><code>var circle = svg.selectAll("circle")
     .data(data);
@@ -80,32 +81,36 @@ circle
     .attr("cx", function(d) { return d.x; })
     .attr("cy", function(d) { return d.y; });</code></pre>
 
-<aside>To control how data is assign&shy;ed to elements, you can pro&shy;vide a <a href="../constancy/">key function</a>.</aside>
+<aside>Научить D3 фиксировать за одним DOM-элементом одно значение данных поможет т.н. <a href="../constancy/">key-функция</a>.</aside>
 
-<p>Whenever this code is run, it recomputes the data join and maintains the desired correspondence between elements and data. If the new dataset is smaller than the old one, the surplus elements end up in the <i>exit</i> selection and get removed. If the new dataset is larger, the surplus data ends up in the <i>enter</i> selection and new nodes are added. If the new dataset is exactly the same size, then all the elements are simply updated with new positions, and no elements are added or removed.
+<p>При каждом запуске код создаёт новую связку — определяет соотношения между данными и свг-кругами. Если новый массив данных меньше старого, ненужные круги попадают в выборку <i>exit</i> и будут удалены функцией remove. В противном случае, избыточные данные попадают в выборку <i>enter</i>, на которой функция append создаёт новые круги. Если размеры массивов совпадают, круги не появятся и не исчезнут, изменятся только их координаты.
 
-<p>Thinking with joins means your code is more <i>declarative</i>: you handle these three states without any branching (<code>if</code>) or iteration (<code>for</code>). Instead you describe how elements should correspond to data. If a given <i>enter</i>, <i>update</i> or <i>exit</i> selection happens to be empty, the corresponding code is a no-op.
 
-<p>Joins also let you target operations to specific states, if needed. For example, you can set constant attributes (such as the circle’s radius, defined by the <code>"r"</code> attribute) on enter rather than update. By reselecting elements and minimizing DOM changes, you vastly improve rendering performance! Similarly, you can target animated transitions to specific states. For example, for entering circles to expand-in:
+<p>Использование связок делает код более декларативным: все три состояния обрабатываются без использования ветвлений (<code>if</code>) и итераций (<code>for</code>). Если выборки <i>enter</i>, <i>update</i> или <i>exit</i> окажутся пустыми, описывающий их трансформации код попросту не выполнится.
+
+<p>Связки позволяют производить операции на конкретной выборке. Можно присвоить постоянное значение (например, атрибут <code>"r"</code> — радиус круга) только вновь добавленным элементам (<i>enter</i>), исключая существующие (<i>update</i>). Засчёт повторных выборок и минимизации изменений в DOM-дереве, отрисовка страницы значительно ускоряется!!
+
+<p>Аналогично задается анимация для конкретной выборки. Например, плавное появление вновь добавленных элементов:
+
 
 <pre><code>circle.enter().append("circle")
     .attr("r", 0)
   .transition()
     .attr("r", 2.5);</code></pre>
 
-<p>Likewise, to shrink-out:
+<p>Или исчезновение удалённых:
 
 <pre><code>circle.exit().transition()
     .attr("r", 0)
     .remove();</code></pre>
 
-<p>Now you’re thinking with joins!
+<p>Теперь вы умеете мыслить связками!
 
 <p>Comments or questions? <a href="http://news.ycombinator.com/item?id=3581614">Discuss on HN.</a>
 
-<h2>Addendum</h2>
+<h2>Приложение</h2>
 
-<p>I’ve written a series of examples on the <a href="http://bl.ocks.org/3808218">general update pattern</a> as a followup to this post.
+<p>Майк также создал серию примеров <a href="http://bl.ocks.org/3808218">типичной работы с документом</a> как дополнение к этой заметке.
 
 <footer>
   <aside>February 5, 2012</aside>
@@ -123,14 +128,14 @@ var svg = d3.select("#join").append("svg")
 
 var data = svg.append("g").attr("transform", "translate(300)");
 data.append("circle").style("fill", "#3182bd");
-data.append("text").attr("y", -120).text("Data").style("font-weight", "bold");
+data.append("text").attr("y", -120).text("Данные").style("font-weight", "bold");
 data.append("text").attr("x", -50).text("Enter");
 
 svg.append("text").attr("x", 360).text("Update");
 
 var elements = svg.append("g").attr("transform", "translate(420)");
 elements.append("circle").style("fill", "#e6550d");
-elements.append("text").attr("y", -120).text("Elements").style("font-weight", "bold");
+elements.append("text").attr("y", -120).text("Элементы").style("font-weight", "bold");
 elements.append("text").attr("x", 50).text("Exit");
 
 svg.selectAll("circle")
